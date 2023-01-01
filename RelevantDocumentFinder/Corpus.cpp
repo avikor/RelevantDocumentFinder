@@ -1,7 +1,6 @@
 #include "Corpus.hpp"
 
 #include <ranges>
-
 namespace RelDocFinder
 {
 	DocumentBag Corpus::getDocumentBag(std::string_view doc)
@@ -210,10 +209,10 @@ namespace RelDocFinder
 					tf += double(searchTermInCurrDoc->second) / docSize;
 				}
 
-				std::size_t nDocsWhichContainTerm{ 0U };
+				std::size_t nDocsWhichContainTerm{ 1U };
 				if (auto searchCorpus = m_wordToDocIds.find(term); searchCorpus != m_wordToDocIds.end())
 				{
-					nDocsWhichContainTerm += std::size(searchCorpus->second);
+					nDocsWhichContainTerm = std::size(searchCorpus->second);
 				}
 
 				double idf{ log(std::size(m_docIdToDocument) / nDocsWhichContainTerm) };
