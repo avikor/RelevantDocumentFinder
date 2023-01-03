@@ -79,12 +79,12 @@ namespace RelDocFinder
 		[[nodiscard]] std::unique_ptr<std::string_view[]> searchQuery(std::string_view query, std::size_t n) const noexcept;
 
 	private:
-		WordToDocIds m_wordToDocIds;						// stores strings
-		DocIdToDocumentBag m_docIdToDocBag;					// stores string_views
-		std::unordered_map<DocId, ulong> m_docIdToSize;
-		DocIdToDocument m_docIdToDocument;					// stores strings
+		WordToDocIds wordToDocIds_;							// stores strings
+		DocIdToDocumentBag docIdToDocBag_;					// stores string_views
+		std::unordered_map<DocId, ulong> docIdToSize_;
+		DocIdToDocument docIdToDocument_;					// stores strings
 
-		mutable std::shared_mutex m_mutex;
+		mutable std::shared_mutex mutex_;
 
 
 		static DocumentBag getDocumentBag(std::string_view doc);

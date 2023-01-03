@@ -46,36 +46,36 @@ namespace RelDocFinder
 			docId = std::strtoul(svDocId.data(), nullptr, 10);
 
 			std::string_view svDoc{ line.begin() + delimPos + 1U, line.end() };
-			m_docIdToDocument.emplace(docId, svDoc);
+			docIdToDocument_.emplace(docId, svDoc);
 
-			m_docIdToDocBag.emplace(docId, Corpus::getDocumentBag(m_docIdToDocument.at(docId)));
+			docIdToDocBag_.emplace(docId, Corpus::getDocumentBag(docIdToDocument_.at(docId)));
 
 			ulong docSize{ 0U };
-			for (const std::pair<std::string_view, Frequency>& entry : m_docIdToDocBag.at(docId))
+			for (const std::pair<std::string_view, Frequency>& entry : docIdToDocBag_.at(docId))
 			{
 				docSize += entry.second;
-				auto it = m_wordToDocIds.find(entry.first);
-				if (it != m_wordToDocIds.end())
+				auto it = wordToDocIds_.find(entry.first);
+				if (it != wordToDocIds_.end())
 				{
 					it->second.insert(docId);
 				}
 				else
 				{
-					m_wordToDocIds.emplace(entry.first, std::initializer_list<DocId>{ docId });
+					wordToDocIds_.emplace(entry.first, std::initializer_list<DocId>{ docId });
 				}
 			}
 
-			m_docIdToSize.emplace(docId, docSize);
+			docIdToSize_.emplace(docId, docSize);
 		}
 	}
 
 	std::optional<std::string_view> Corpus::getDocument(DocId docId) const noexcept
 	{
-		std::shared_lock lock{ m_mutex };
+		std::shared_lock lock{ mutex_ };
 
-		if (m_docIdToDocument.contains(docId)) [[likely]]
+		if (docIdToDocument_.contains(docId)) [[likely]]
 		{
-			return m_docIdToDocument.at(docId);
+			return docIdToDocument_.at(docId);
 		}
 		else [[unlikely]]
 		{
@@ -85,62 +85,62 @@ namespace RelDocFinder
 
 	bool Corpus::deleteDocument(DocId docId) noexcept
 	{
-		std::unique_lock lock{ m_mutex };
+		std::unique_lock lock{ mutex_ };
 
-		if (!m_docIdToDocument.contains(docId)) [[unlikely]]
+		if (!docIdToDocument_.contains(docId)) [[unlikely]]
 		{
 			return false;
 		}
 
-		for (const std::pair<std::string_view, Frequency>& entry : m_docIdToDocBag.at(docId))
+		for (const std::pair<std::string_view, Frequency>& entry : docIdToDocBag_.at(docId))
 		{
-			auto it = m_wordToDocIds.find(entry.first);
-			if (it != m_wordToDocIds.end())
+			auto it = wordToDocIds_.find(entry.first);
+			if (it != wordToDocIds_.end())
 			{
 				it->second.erase(docId);
 				if (it->second.empty())
 				{
-					m_wordToDocIds.erase(it);
+					wordToDocIds_.erase(it);
 				}
 			}
 		}
 
-		m_docIdToDocBag.erase(docId);
-		m_docIdToSize.erase(docId);
-		m_docIdToDocument.erase(docId);
+		docIdToDocBag_.erase(docId);
+		docIdToSize_.erase(docId);
+		docIdToDocument_.erase(docId);
 
 		return true;
 	}
 
 	bool Corpus::addDocument(DocId docId, std::string_view doc) noexcept
 	{
-		std::unique_lock lock{ m_mutex };
+		std::unique_lock lock{ mutex_ };
 
-		if (doc.empty() || m_docIdToDocument.contains(docId)) [[unlikely]]
+		if (doc.empty() || docIdToDocument_.contains(docId)) [[unlikely]]
 		{
 			return false;
 		}
 
-		m_docIdToDocument.emplace(docId, doc);
+		docIdToDocument_.emplace(docId, doc);
 
-		m_docIdToDocBag.emplace(docId, Corpus::getDocumentBag(m_docIdToDocument.at(docId)));
+		docIdToDocBag_.emplace(docId, Corpus::getDocumentBag(docIdToDocument_.at(docId)));
 
 		ulong docSize{ 0U };
-		for (const std::pair<std::string_view, Frequency>& entry : m_docIdToDocBag.at(docId))
+		for (const std::pair<std::string_view, Frequency>& entry : docIdToDocBag_.at(docId))
 		{
 			docSize += entry.second;
-			auto it = m_wordToDocIds.find(entry.first);
-			if (it != m_wordToDocIds.end())
+			auto it = wordToDocIds_.find(entry.first);
+			if (it != wordToDocIds_.end())
 			{
 				it->second.insert(docId);
 			}
 			else
 			{
-				m_wordToDocIds.emplace(entry.first, std::initializer_list<DocId>{ docId });
+				wordToDocIds_.emplace(entry.first, std::initializer_list<DocId>{ docId });
 			}
 		}
 
-		m_docIdToSize.emplace(docId, docSize);
+		docIdToSize_.emplace(docId, docSize);
 
 		return true;
 	}
@@ -160,7 +160,7 @@ namespace RelDocFinder
 
 	bool Corpus::addOrUpdateDocument(DocId docId, std::string_view doc) noexcept
 	{
-		if (m_docIdToDocument.contains(docId))
+		if (docIdToDocument_.contains(docId))
 		{
 			return updateDocument(docId, doc);
 		}
@@ -172,7 +172,7 @@ namespace RelDocFinder
 
 	std::unique_ptr<std::string_view[]> Corpus::searchQuery(std::string_view query, std::size_t n) const noexcept
 	{
-		std::shared_lock lock{ m_mutex };
+		std::shared_lock lock{ mutex_ };
 
 		DocumentBag queryBag{ Corpus::getDocumentBag(query) };
 
@@ -193,11 +193,11 @@ namespace RelDocFinder
 
 		// tfidf(term, document, corpus) = tf * idf
 
-		for (const auto& docIdToBag : m_docIdToDocBag)
+		for (const auto& docIdToBag : docIdToDocBag_)
 		{
 			DocId docId = docIdToBag.first;
 			const DocumentBag& currDocBag = docIdToBag.second;
-			ulong docSize{ m_docIdToSize.at(docId) };
+			ulong docSize{ docIdToSize_.at(docId) };
 
 			double tfidf{ 0.0 };
 
@@ -210,12 +210,12 @@ namespace RelDocFinder
 				}
 
 				std::size_t nDocsWhichContainTerm{ 1U };
-				if (auto searchCorpus = m_wordToDocIds.find(term); searchCorpus != m_wordToDocIds.end())
+				if (auto searchCorpus = wordToDocIds_.find(term); searchCorpus != wordToDocIds_.end())
 				{
 					nDocsWhichContainTerm = std::size(searchCorpus->second);
 				}
 
-				double idf{ log(std::size(m_docIdToDocument) / nDocsWhichContainTerm) };
+				double idf{ log(std::size(docIdToDocument_) / nDocsWhichContainTerm) };
 
 				tfidf += tf * idf;
 			}
@@ -236,7 +236,7 @@ namespace RelDocFinder
 		std::size_t idx{ minHeap.size() - 1U };
 		while (!minHeap.empty())
 		{
-			queryResult[idx] = m_docIdToDocument.at(minHeap.top().second);
+			queryResult[idx] = docIdToDocument_.at(minHeap.top().second);
 			--idx;
 			minHeap.pop();
 		}
