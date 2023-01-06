@@ -53,7 +53,7 @@ namespace RelDocFinder
 			for (const std::pair<std::string_view, Frequency>& entry : docIdToDocBag_.at(docId))
 			{
 				docSize += entry.second;
-				auto it = wordToDocIds_.find(entry.first);
+				const auto it = wordToDocIds_.find(entry.first);
 				if (it != wordToDocIds_.end())
 				{
 					it->second.insert(docId);
@@ -146,8 +146,7 @@ namespace RelDocFinder
 
 	bool Corpus::updateDocument(const DocId docId, std::string_view doc) noexcept
 	{
-		const bool delSuccess{ deleteDocument(docId) };
-		if (delSuccess) [[likely]]
+		if (deleteDocument(docId)) [[likely]]
 		{
 			return addDocument(docId, doc);
 		}
