@@ -11,7 +11,7 @@ namespace RelDocFinder
 
 		while (start < doc.size())
 		{
-			auto end = doc.find_first_of(' ', start);
+			const auto end = doc.find_first_of(' ', start);
 			if (start != end)
 			{
 				std::string_view wrd{ doc.substr(start, end - start) };
@@ -37,11 +37,10 @@ namespace RelDocFinder
 		std::ifstream csvFile{ csvFilePath.data() };
 
 		DocId docId{ 0U };
-		std::string doc{ "" };
 
-		for (std::string line; std::getline(csvFile, line); )
+		for (std::string line{}; std::getline(csvFile, line); )
 		{
-			auto delimPos{ line.find(',') };
+			const auto delimPos{ line.find(',') };
 			std::string_view svDocId{ line.begin(), line.begin() + delimPos };
 			docId = std::strtoul(svDocId.data(), nullptr, 10);
 
@@ -69,7 +68,7 @@ namespace RelDocFinder
 		}
 	}
 
-	std::optional<std::string_view> Corpus::getDocument(DocId docId) const noexcept
+	std::optional<std::string_view> Corpus::getDocument(const DocId docId) const noexcept
 	{
 		std::shared_lock lock{ mutex_ };
 
@@ -83,7 +82,7 @@ namespace RelDocFinder
 		}
 	}
 
-	bool Corpus::deleteDocument(DocId docId) noexcept
+	bool Corpus::deleteDocument(const DocId docId) noexcept
 	{
 		std::unique_lock lock{ mutex_ };
 
@@ -94,7 +93,7 @@ namespace RelDocFinder
 
 		for (const std::pair<std::string_view, Frequency>& entry : docIdToDocBag_.at(docId))
 		{
-			auto it = wordToDocIds_.find(entry.first);
+			const auto it = wordToDocIds_.find(entry.first);
 			if (it != wordToDocIds_.end())
 			{
 				it->second.erase(docId);
@@ -112,7 +111,7 @@ namespace RelDocFinder
 		return true;
 	}
 
-	bool Corpus::addDocument(DocId docId, std::string_view doc) noexcept
+	bool Corpus::addDocument(const DocId docId, std::string_view doc) noexcept
 	{
 		std::unique_lock lock{ mutex_ };
 
@@ -129,7 +128,7 @@ namespace RelDocFinder
 		for (const std::pair<std::string_view, Frequency>& entry : docIdToDocBag_.at(docId))
 		{
 			docSize += entry.second;
-			auto it = wordToDocIds_.find(entry.first);
+			const auto it = wordToDocIds_.find(entry.first);
 			if (it != wordToDocIds_.end())
 			{
 				it->second.insert(docId);
@@ -145,9 +144,9 @@ namespace RelDocFinder
 		return true;
 	}
 
-	bool Corpus::updateDocument(DocId docId, std::string_view doc) noexcept
+	bool Corpus::updateDocument(const DocId docId, std::string_view doc) noexcept
 	{
-		bool delSuccess{ deleteDocument(docId) };
+		const bool delSuccess{ deleteDocument(docId) };
 		if (delSuccess) [[likely]]
 		{
 			return addDocument(docId, doc);
@@ -158,7 +157,7 @@ namespace RelDocFinder
 		}
 	}
 
-	bool Corpus::addOrUpdateDocument(DocId docId, std::string_view doc) noexcept
+	bool Corpus::addOrUpdateDocument(const DocId docId, std::string_view doc) noexcept
 	{
 		if (docIdToDocument_.contains(docId))
 		{
@@ -170,11 +169,11 @@ namespace RelDocFinder
 		}
 	}
 
-	std::unique_ptr<std::string_view[]> Corpus::searchQuery(std::string_view query, std::size_t n) const noexcept
+	std::unique_ptr<std::string_view[]> Corpus::searchQuery(std::string_view query, const std::size_t n) const noexcept
 	{
 		std::shared_lock lock{ mutex_ };
 
-		DocumentBag queryBag{ Corpus::getDocumentBag(query) };
+		const DocumentBag queryBag{ Corpus::getDocumentBag(query) };
 
 		DocScoreMinHeap minHeap{ searchAndRank(queryBag, n) };
 
@@ -183,7 +182,7 @@ namespace RelDocFinder
 		return queryResult;
 	}
 	
-	DocScoreMinHeap Corpus::searchAndRank(const DocumentBag& queryBag, std::size_t n) const noexcept
+	DocScoreMinHeap Corpus::searchAndRank(const DocumentBag& queryBag, const std::size_t n) const noexcept
 	{
 		DocScoreMinHeap minHeap{ Corpus::compareByScore }; // min heap of tfidf score --> docId
 
@@ -195,9 +194,9 @@ namespace RelDocFinder
 
 		for (const auto& docIdToBag : docIdToDocBag_)
 		{
-			DocId docId = docIdToBag.first;
+			const DocId docId = docIdToBag.first;
 			const DocumentBag& currDocBag = docIdToBag.second;
-			ulong docSize{ docIdToSize_.at(docId) };
+			const ulong docSize{ docIdToSize_.at(docId) };
 
 			double tfidf{ 0.0 };
 
@@ -215,7 +214,7 @@ namespace RelDocFinder
 					nDocsWhichContainTerm = std::size(searchCorpus->second);
 				}
 
-				double idf{ log(std::size(docIdToDocument_) / nDocsWhichContainTerm) };
+				const double idf{ log(std::size(docIdToDocument_) / nDocsWhichContainTerm) };
 
 				tfidf += tf * idf;
 			}
@@ -230,7 +229,7 @@ namespace RelDocFinder
 		return minHeap;
 	}
 
-	std::unique_ptr<std::string_view[]> Corpus::obtainQueryResult(DocScoreMinHeap& minHeap, std::size_t n) const noexcept
+	std::unique_ptr<std::string_view[]> Corpus::obtainQueryResult(DocScoreMinHeap& minHeap, const std::size_t n) const noexcept
 	{
 		std::unique_ptr<std::string_view[]> queryResult = std::make_unique<std::string_view[]>(n);
 		std::size_t idx{ minHeap.size() - 1U };

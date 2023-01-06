@@ -66,17 +66,17 @@ namespace RelDocFinder
 
 		explicit Corpus(std::string_view csvFilePath);  // init with csv file, each line is considered as a document
 
-		[[nodiscard]] std::optional<std::string_view> getDocument(DocId docId) const noexcept;
+		[[nodiscard]] std::optional<std::string_view> getDocument(const DocId docId) const noexcept;
 
-		[[nodiscard]] bool deleteDocument(DocId docId) noexcept;
+		[[nodiscard]] bool deleteDocument(const DocId docId) noexcept;
 
-		[[nodiscard]] bool addDocument(DocId docId, std::string_view doc) noexcept;
+		[[nodiscard]] bool addDocument(const DocId docId, std::string_view doc) noexcept;
 
-		[[nodiscard]] bool updateDocument(DocId docId, std::string_view doc) noexcept;
+		[[nodiscard]] bool updateDocument(const DocId docId, std::string_view doc) noexcept;
 
-		[[nodiscard]] bool addOrUpdateDocument(DocId docId, std::string_view doc) noexcept;
+		[[nodiscard]] bool addOrUpdateDocument(const DocId docId, std::string_view doc) noexcept;
 
-		[[nodiscard]] std::unique_ptr<std::string_view[]> searchQuery(std::string_view query, std::size_t n) const noexcept;
+		[[nodiscard]] std::unique_ptr<std::string_view[]> searchQuery(std::string_view query, const std::size_t n) const noexcept;
 
 	private:
 		WordToDocIds wordToDocIds_;							// stores strings
@@ -92,8 +92,8 @@ namespace RelDocFinder
 		static bool compareByScore(const std::pair<double, DocId>&, const std::pair<double, DocId>&);
 
 
-		DocScoreMinHeap searchAndRank(const DocumentBag& queryBag, std::size_t n) const noexcept;
+		DocScoreMinHeap searchAndRank(const DocumentBag& queryBag, const std::size_t n) const noexcept;
 
-		std::unique_ptr<std::string_view[]> obtainQueryResult(DocScoreMinHeap& minHeap, std::size_t n) const noexcept;
+		std::unique_ptr<std::string_view[]> obtainQueryResult(DocScoreMinHeap& minHeap, const std::size_t n) const noexcept;
 	};
 }
