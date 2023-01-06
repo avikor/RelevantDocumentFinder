@@ -1,6 +1,7 @@
 #include <fstream>
 #include <string>
 #include <numeric>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <initializer_list>

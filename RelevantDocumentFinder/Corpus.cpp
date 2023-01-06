@@ -1,6 +1,10 @@
 #include "Corpus.hpp"
 
 #include <ranges>
+#include <mutex>
+#include <cmath>
+
+
 namespace RelDocFinder
 {
 	DocumentBag Corpus::getDocumentBag(std::string_view doc)
