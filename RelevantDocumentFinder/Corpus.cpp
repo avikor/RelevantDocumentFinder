@@ -182,7 +182,7 @@ namespace RelDocFinder
 	
 	std::priority_queue<Corpus::DocInfo> Corpus::searchAndRank(const DocumentBag& queryBag, const std::size_t n) const noexcept
 	{
-		std::priority_queue<DocInfo> minHeap{}; // min heap of tfidf score --> docId
+		std::priority_queue<DocInfo> minHeap{};
 
 		// tf(term, document) = #(occurences of term in document) / #(words in document)
 
