@@ -13,6 +13,9 @@
 
 namespace RelDocFinder
 {
+	using ulong = unsigned long;
+	using DocId = ulong;
+
 	struct string_view_hash
 	{
 		using is_transparent = std::true_type;
@@ -32,32 +35,6 @@ namespace RelDocFinder
 			return a == b;
 		}
 	};
-
-
-
-	using ulong = unsigned long;
-
-	using DocId = ulong;
-
-	using Frequency = ulong;
-
-	// word to document-IDs which it appears in
-	// the functors are so unordered_map could look up both std::string and std::string_view
-	// as std::string_view can be implicitly constructed from std::string
-	using WordToDocIds = std::unordered_map<std::string, std::unordered_set<DocId>, string_view_hash, string_view_equal>;
-
-	// word to its frequency in a document
-	using DocumentBag = std::unordered_map<std::string_view, Frequency>;
-
-	// document id to its document bag
-	using DocIdToDocumentBag = std::unordered_map<DocId, DocumentBag>;
-
-	using DocIdToDocument = std::unordered_map<DocId, std::string>;
-
-
-	using CompDoc = std::function<bool(const std::pair<double, DocId>&, const std::pair<double, DocId>&)>;
-
-	using DocScoreMinHeap = std::priority_queue<std::pair<double, DocId>, std::vector<std::pair<double, DocId>>, CompDoc>;
 
 
 	class Corpus
@@ -80,6 +57,35 @@ namespace RelDocFinder
 		[[nodiscard]] std::unique_ptr<std::string_view[]> searchQuery(std::string_view query, const std::size_t n) const noexcept;
 
 	private:
+		using Frequency = ulong;
+
+		// word to document-IDs which it appears in
+		// the functors are so unordered_map could look up both std::string and std::string_view
+		// as std::string_view can be implicitly constructed from std::string
+		using WordToDocIds = std::unordered_map<std::string, std::unordered_set<DocId>, string_view_hash, string_view_equal>;
+
+		// word to its frequency in a document
+		using DocumentBag = std::unordered_map<std::string_view, Frequency>;
+
+		// document id to its document bag
+		using DocIdToDocumentBag = std::unordered_map<DocId, DocumentBag>;
+
+		using DocIdToDocument = std::unordered_map<DocId, std::string>;
+
+
+		struct DocInfo
+		{
+			DocId docId;
+			double tfIdfScore;
+
+			// sizeof(DocInfo) is small, so take by value
+			friend bool operator<(const DocInfo lhs, const DocInfo rhs) 
+			{
+				return lhs.tfIdfScore > rhs.tfIdfScore;
+			}
+		};
+
+
 		WordToDocIds wordToDocIds_;							// stores strings
 		DocIdToDocumentBag docIdToDocBag_;					// stores string_views
 		std::unordered_map<DocId, ulong> docIdToSize_;
@@ -90,11 +96,9 @@ namespace RelDocFinder
 
 		static DocumentBag getDocumentBag(std::string_view doc);
 
-		static bool compareByScore(const std::pair<double, DocId>&, const std::pair<double, DocId>&);
 
+		std::priority_queue<DocInfo> searchAndRank(const DocumentBag& queryBag, const std::size_t n) const noexcept;
 
-		DocScoreMinHeap searchAndRank(const DocumentBag& queryBag, const std::size_t n) const noexcept;
-
-		std::unique_ptr<std::string_view[]> obtainQueryResult(DocScoreMinHeap& minHeap, const std::size_t n) const noexcept;
+		std::unique_ptr<std::string_view[]> obtainQueryResult(std::priority_queue<DocInfo>& minHeap, const std::size_t n) const noexcept;
 	};
 }

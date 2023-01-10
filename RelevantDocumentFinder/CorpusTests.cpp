@@ -37,7 +37,7 @@ TEST_CASE("Corpus", "[Corpus]")
 		constexpr int n{ 3 };
 		std::unique_ptr<std::string_view[]> queryRes = corpus.searchQuery("happy day", n);
 
-		constexpr std::string_view expected[] = { "happy", "happy day", "colorless green ideas sleep furiously" };
+		constexpr std::string_view expected[] = { "happy", "happy day",  "day" };
 
 		for (int i = 0; i < n; ++i)
 		{
@@ -90,7 +90,7 @@ TEST_CASE("Corpus", "[Corpus]")
 		constexpr int n{ 3 };
 		std::unique_ptr<std::string_view[]> queryRes = corpus.searchQuery("happy day", n);
 
-		constexpr std::string_view expected[] = { "happy day", "happy", "colorless green ideas sleep furiously" };
+		constexpr std::string_view expected[] = { "happy day", "happy day", "happy"};
 
 		for (int i = 0; i < n; ++i)
 		{
